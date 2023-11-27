@@ -4,13 +4,14 @@ const createTaskBtn = document.querySelector('.task-manager__btn-create');
 const wrapperTask = document.querySelector('.task-manager__items');
 
 let cnt = 1;
-const createTask = () => {
-        if(inputTask.value){
-        wrapperTask.innerHTML += ` <div class="tasks__wrapper">
-                <label for="${cnt}" class="tasks__item">
-                    ${inputTask.value}
+
+
+const tasksItem = (cnt, text, label) => {
+    return ` <div class="tasks__wrapper">
+                <label for="${cnt}" class="${!label ? "tasks__item" : "tasks__item toggle"}">
+                    ${text}
                 </label>
-                <input type="checkbox" name="task" id="${cnt}">
+                <input type="checkbox" name="task" id="${cnt}" ${label && 'checked'}>
                 <button type="button" class="tasks__edit">
                     <img src="./assets/img/edit.png" />
                 </button>
@@ -18,27 +19,89 @@ const createTask = () => {
                     Удалить
                 </button>
             </div>`;
-            inputTask.value = '';
-            cnt++;
-        } 
 }
+
+const getTask = () => {
+    const dataLocal = localStorage.getItem('tasks') || "[]";
+    return JSON.parse(dataLocal);
+}
+
+
+const setTask = (tasks) => {
+    const taskJson = JSON.stringify(tasks);
+    localStorage.setItem('tasks', taskJson);
+}
+
+
+let taskStorage = getTask();
+
+
+const updateLocal = (edit = false, newText, idItem) => {
+
+    taskStorage.forEach(el => {
+    
+        if(newText !== null && el.id == idItem && el.text != newText){
+            el.text = newText
+        }
+        else if(el.id == idItem && el.flag != edit){
+            el.flag = edit
+        }
+    })
+    setTask(taskStorage);
+}
+const now = new Date();
+const dateInput = document.querySelector('.date');
+
+
+
+const tasksLocal = () => {
+    const isDayArr = taskStorage.filter(({date}) => date === dateInput.value);
+    if(!isDayArr.length){
+        wrapperTask.innerHTML = "<h2>Список задач пуст</h2>";
+    } 
+
+    isDayArr.forEach(({id, text, flag} )=> {
+        wrapperTask.innerHTML += tasksItem(id, text, flag);
+    })
+}
+
+const createTask = () => {
+        if(inputTask.value){
+            taskStorage.push({
+                text: inputTask.value,
+                flag: false,
+                id: cnt++,
+                date: dateInput.value
+        });
+        if(wrapperTask.firstElementChild.tagName === 'H2'){
+            wrapperTask.firstElementChild.remove()
+        }
+        wrapperTask.innerHTML += tasksItem(cnt, inputTask.value, false);
+        inputTask.value = '';
+        setTask(taskStorage);
+
+        }
+}
+
+
 
 const allDelete = () => {
     const itemsTask = document.querySelectorAll('.tasks__wrapper');
     itemsTask.forEach(item => item.remove())
+    localStorage.clear('tasks');
 }
-
 
 
 /*добавить функционал сохранения задач в localStorage. 
 // Это значит что после создания задач, пользователь может перезагрузить 
 страницу и не потерять даннх. */
 
-/* добавить выбор даты (у каждой даты свой набор задач). 
-Должно работать в связке с localStorage.*/
-
-
 document.addEventListener('DOMContentLoaded', () => {
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const day = now.getDate();
+    const fullDate = year + "-" + month + "-" + day ;
+    dateInput.value = fullDate;
     // create task button click
     createTaskBtn.addEventListener('click', () => {
         createTask();
@@ -52,20 +115,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // all delete
     document.addEventListener('click', (e) => {
         if(e.target.closest('.task-manager__update')){
-            allDelete()
+            allDelete();
         }
     })
     // Delete task
     document.addEventListener('click', (e) => {
+        const clickInd = e.target.parentNode.firstElementChild.getAttribute('for');
+        const storageFilter = taskStorage.filter((el) => clickInd != el.id);
+
         if(e.target.closest('.tasks__btn-delete')){
-            e.target.parentNode.remove()
+            e.target.parentNode.remove();
+            setTask(storageFilter);
         }
     });
     // Task completed
     document.addEventListener('change', (e) => {
         if(e.target.closest('.tasks__wrapper input')){
             const textTask = e.target.previousElementSibling;
-            if(textTask && textTask.classList.contains('tasks__item')){
+           updateLocal(e.target.checked, null, e.target.id)
+            if(textTask?.classList.contains('tasks__item')){
                 textTask.classList.toggle('toggle');
             }
         }
@@ -74,14 +142,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         if(e.target.closest('.tasks__edit')){
            const itemTask = e.target.parentNode;
-
+           e.target.classList.add('active');
+           const initialText = itemTask.firstElementChild.textContent.trim();
            e.target.previousElementSibling.disabled = true;
            itemTask.firstElementChild.innerHTML = `
         <div class="tasks__edit-wrapper">
-            <input type="text" class="task__edit-input"/>
+            <input type="text" value="${initialText}" class="task__edit-input"/>
             <button type="button">Сохранить</button>
         </div>`;
-
         };
 
         // Save new text
@@ -89,19 +157,36 @@ document.addEventListener('DOMContentLoaded', () => {
             if(e.target.closest('.tasks__edit-wrapper button')){
                 const newText = e.target.previousElementSibling.value;
                 const item = e.target.parentNode.parentNode;
-
+                const editBtn = item?.nextElementSibling.nextElementSibling
                 const checkbox = item?.nextElementSibling;
-                
-                if(item && item.classList.contains('tasks__item')){
+                if(newText !== '' && item?.classList.contains('tasks__item')){
                     item.innerHTML = `${newText}`;
                     item.classList.toggle('toggle');
+                    editBtn.classList.remove('active');
+
                 }
                 if(checkbox){
                     checkbox.disabled = false;
                     checkbox.checked = true;
                 }
-     
+                updateLocal(false, newText, item?.getAttribute('for'));
             }
         })
+    });
+    document.addEventListener('change', (e) => {
+        if(inputTask.value === '' && e.target.closest('.date')){
+            const arrDays = taskStorage.filter(({date}) => date === dateInput.value);
+            wrapperTask.innerHTML = '';
+            arrDays.forEach(({id, text, flag} )=> {
+            wrapperTask.innerHTML += tasksItem(id, text, flag);
+        });
+ 
+        if(!arrDays.length){
+            wrapperTask.innerHTML = "<h2>Для выбранного дня, увы задач нет...</h2>"
+        } 
+        }
     })
+    if(taskStorage){
+        tasksLocal();
+    }
 })

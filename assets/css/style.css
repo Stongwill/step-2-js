@@ -50,6 +50,9 @@ input{
     width: 50px;
     height: 50px;
 }
+.tasks__edit.active{
+    pointer-events: none;
+}
 .tasks__edit img{
     max-width: 100%;
     pointer-events: none;
