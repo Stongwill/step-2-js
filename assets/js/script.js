@@ -3,8 +3,6 @@ const createTaskBtn = document.querySelector('.task-manager__btn-create');
 
 const wrapperTask = document.querySelector('.task-manager__items');
 
-let cnt = 1;
-
 
 const tasksItem = (cnt, text, label) => {
     return ` <div class="tasks__wrapper">
@@ -49,13 +47,15 @@ const updateLocal = (edit = false, newText, idItem) => {
     })
     setTask(taskStorage);
 }
+
 const now = new Date();
 const dateInput = document.querySelector('.date');
 
 
-
 const tasksLocal = () => {
     const isDayArr = taskStorage.filter(({date}) => date === dateInput.value);
+    wrapperTask.innerHTML = '';
+
     if(!isDayArr.length){
         wrapperTask.innerHTML = "<h2>Список задач пуст</h2>";
     } 
@@ -70,16 +70,15 @@ const createTask = () => {
             taskStorage.push({
                 text: inputTask.value,
                 flag: false,
-                id: cnt++,
+                id: Date.now(),
                 date: dateInput.value
         });
         if(wrapperTask.firstElementChild.tagName === 'H2'){
             wrapperTask.firstElementChild.remove()
         }
-        wrapperTask.innerHTML += tasksItem(cnt, inputTask.value, false);
+        tasksLocal()
         inputTask.value = '';
         setTask(taskStorage);
-
         }
 }
 
@@ -92,20 +91,19 @@ const allDelete = () => {
 }
 
 
-/*добавить функционал сохранения задач в localStorage. 
-// Это значит что после создания задач, пользователь может перезагрузить 
-страницу и не потерять даннх. */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Output input date 
     const year = now.getFullYear();
     const month = now.getMonth();
     const day = now.getDate();
     const fullDate = year + "-" + month + "-" + day ;
     dateInput.value = fullDate;
+
     // create task button click
     createTaskBtn.addEventListener('click', () => {
         createTask();
-    })
+    });
     // create task - key - enter
     inputTask.addEventListener('keydown', (e) => {
         if(e.key === 'Enter'){
@@ -117,13 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if(e.target.closest('.task-manager__update')){
             allDelete();
         }
-    })
+    });
     // Delete task
     document.addEventListener('click', (e) => {
-        const clickInd = e.target.parentNode.firstElementChild.getAttribute('for');
-        const storageFilter = taskStorage.filter((el) => clickInd != el.id);
-
         if(e.target.closest('.tasks__btn-delete')){
+            const clickInd = e.target.parentNode.firstElementChild.getAttribute('for');
+            const storageFilter = taskStorage.filter((el) => clickInd != el.id);
+            taskStorage = [...storageFilter];
             e.target.parentNode.remove();
             setTask(storageFilter);
         }
@@ -132,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('change', (e) => {
         if(e.target.closest('.tasks__wrapper input')){
             const textTask = e.target.previousElementSibling;
-           updateLocal(e.target.checked, null, e.target.id)
+            updateLocal(e.target.checked, null, e.target.id);
             if(textTask?.classList.contains('tasks__item')){
                 textTask.classList.toggle('toggle');
             }
@@ -142,16 +140,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         if(e.target.closest('.tasks__edit')){
            const itemTask = e.target.parentNode;
-           e.target.classList.add('active');
+           if(!e.target.classList.contains('active')){
+            e.target.classList.add('active');
+           }
+
+           if(itemTask.firstElementChild.classList.contains('toggle')){
+            itemTask.firstElementChild.classList.remove('toggle')
+           }
+
            const initialText = itemTask.firstElementChild.textContent.trim();
            e.target.previousElementSibling.disabled = true;
+       
            itemTask.firstElementChild.innerHTML = `
-        <div class="tasks__edit-wrapper">
-            <input type="text" value="${initialText}" class="task__edit-input"/>
-            <button type="button">Сохранить</button>
-        </div>`;
-        };
-
+                <div class="tasks__edit-wrapper">
+                    <input type="text" value="${initialText}" class="task__edit-input"/>
+                    <button type="button">Сохранить</button>
+                </div>`;
+                };
         // Save new text
         document.addEventListener('click', (e) => {
             if(e.target.closest('.tasks__edit-wrapper button')){
@@ -163,7 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.innerHTML = `${newText}`;
                     item.classList.toggle('toggle');
                     editBtn.classList.remove('active');
-
+                }
+                if(!item?.classList.contains('toggle')){
+                    item?.classList.toggle('toggle');
                 }
                 if(checkbox){
                     checkbox.disabled = false;
@@ -173,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         })
     });
+    // Change date
     document.addEventListener('change', (e) => {
         if(inputTask.value === '' && e.target.closest('.date')){
             const arrDays = taskStorage.filter(({date}) => date === dateInput.value);
@@ -182,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
  
         if(!arrDays.length){
-            wrapperTask.innerHTML = "<h2>Для выбранного дня, увы задач нет...</h2>"
+            wrapperTask.innerHTML = "<h2>Список задач пуст</h2>"
         } 
         }
     })

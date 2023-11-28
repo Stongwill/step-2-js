@@ -35,9 +35,10 @@ input{
 
 }
 
-.tasks__item.toggle{
+label.tasks__item.toggle{
     text-decoration: line-through;
 }
+
 .tasks__wrapper{
     display: flex;
     justify-content: space-between;
