@@ -89,6 +89,9 @@ label.tasks__item.toggle{
     border-radius: 15px;
 }
 
+.tasks__item.active input {
+    text-decoration: line-through;
+}
 .container{
     max-width: 1280px;
     padding: 0 15px;

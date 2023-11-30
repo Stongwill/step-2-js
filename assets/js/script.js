@@ -35,13 +35,11 @@ let taskStorage = getTask();
 
 
 const updateLocal = (edit = false, newText, idItem) => {
-
     taskStorage.forEach(el => {
-    
-        if(newText !== null && el.id == idItem && el.text != newText){
+        if(newText !== null && el.id == idItem && el.text !== newText){
             el.text = newText
         }
-        else if(el.id == idItem && el.flag != edit){
+        if(el.id == idItem && el.flag !== edit){
             el.flag = edit
         }
     })
@@ -73,9 +71,7 @@ const createTask = () => {
                 id: Date.now(),
                 date: dateInput.value
         });
-        if(wrapperTask.firstElementChild.tagName === 'H2'){
-            wrapperTask.firstElementChild.remove()
-        }
+        wrapperTask.firstElementChild.tagName === 'H2' && wrapperTask.firstElementChild.remove();
         tasksLocal()
         inputTask.value = '';
         setTask(taskStorage);
@@ -89,7 +85,6 @@ const allDelete = () => {
     itemsTask.forEach(item => item.remove())
     localStorage.clear('tasks');
 }
-
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -145,7 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
            }
 
            if(itemTask.firstElementChild.classList.contains('toggle')){
-            itemTask.firstElementChild.classList.remove('toggle')
+            itemTask.firstElementChild.classList.remove('toggle');
+            itemTask.firstElementChild.classList.add('active');
            }
 
            const initialText = itemTask.firstElementChild.textContent.trim();
@@ -157,26 +153,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="button">Сохранить</button>
                 </div>`;
                 };
+
         // Save new text
         document.addEventListener('click', (e) => {
             if(e.target.closest('.tasks__edit-wrapper button')){
                 const newText = e.target.previousElementSibling.value;
                 const item = e.target.parentNode.parentNode;
-                const editBtn = item?.nextElementSibling.nextElementSibling
+                const editBtn = item?.nextElementSibling.nextElementSibling;
                 const checkbox = item?.nextElementSibling;
-                if(newText !== '' && item?.classList.contains('tasks__item')){
-                    item.innerHTML = `${newText}`;
-                    item.classList.toggle('toggle');
-                    editBtn.classList.remove('active');
+                if(newText !== ''){
+                    if(item?.classList.contains('tasks__item')){
+                        item.innerHTML = `${newText}`;
+                        item.classList.toggle('toggle');
+                        editBtn.classList.remove('active');
+                    }
+                   
+                    if(checkbox){
+                        checkbox.disabled = false;
+                        checkbox.checked = true;
+                    }
+                    if(item?.classList.contains('active')){
+                        item.classList.toggle('toggle');
+                        checkbox.checked = false;
+                    }
+                    updateLocal(false, newText, item?.getAttribute('for'));
                 }
-                if(!item?.classList.contains('toggle')){
-                    item?.classList.toggle('toggle');
-                }
-                if(checkbox){
-                    checkbox.disabled = false;
-                    checkbox.checked = true;
-                }
-                updateLocal(false, newText, item?.getAttribute('for'));
             }
         })
     });
